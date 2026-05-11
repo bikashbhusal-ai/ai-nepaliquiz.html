@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>नेपाली क्विज - विकाश भुसाल</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // ─── 20 FALLBACK SETS: 10 Nepali + 10 English ─────────────────────────────
+        const FALLBACK_SETS = { sets: [
+          // ══ NEPALI SET 1 ══
+          { id:1, title:"नेपाली मिश्रित – सेट १", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'खुसी' को पर्यायवाची शब्द ___ हो ।", answer:"आनन्द", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'दिन' को विपरीतार्थी शब्द ___ हो ।", answer:"रात", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'ऊ हिँड्छ' – यो कुन काल हो ? ___ वर्तमान", answer:"सामान्य", type:"काल" },
+              { label:"घ", questionText:"'कवि' को स्त्रीलिङ्ग ___ हो ।", answer:"कवयित्री", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'अग्नि' शब्दको अर्थ ___ हो ।", answer:"आगो", type:"शब्दार्थ" },
+            ],
+            wordBank:["आनन्द","रात","सामान्य","कवयित्री","आगो","उज्यालो","दुःख"],
+          },
+          // ══ NEPALI SET 2 ══
+          { id:2, title:"नेपाली मिश्रित – सेट २", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'जल' को पर्यायवाची शब्द ___ हो ।", answer:"पानी", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'ठूलो' को विपरीतार्थी शब्द ___ हो ।", answer:"सानो", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'ऊ पढिरहेको थियो' – यो ___ भूत काल हो ।", answer:"अपूर्ण", type:"काल" },
+              { label:"घ", questionText:"'राजा' को स्त्रीलिङ्ग ___ हो ।", answer:"रानी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'दुग्ध' शब्दको अर्थ ___ हो ।", answer:"दूध", type:"शब्दार्थ" },
+            ],
+            wordBank:["पानी","सानो","अपूर्ण","रानी","दूध","पूर्ण","महिला"],
+          },
+          // ══ NEPALI SET 3 ══
+          { id:3, title:"नेपाली मिश्रित – सेट ३", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'मित्र' को पर्यायवाची शब्द ___ हो ।", answer:"साथी", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'सत्य' को विपरीतार्थी शब्द ___ हो ।", answer:"असत्य", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'उनले खाए' – यो ___ भूत काल हो ।", answer:"सामान्य", type:"काल" },
+              { label:"घ", questionText:"'नेता' को स्त्रीलिङ्ग ___ हो ।", answer:"नेत्री", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'आकाश' को पर्यायवाची ___ हो ।", answer:"गगन", type:"पर्यायवाची" },
+            ],
+            wordBank:["साथी","असत्य","सामान्य","नेत्री","गगन","शत्रु","अपूर्ण"],
+          },
+          // ══ NEPALI SET 4 ══
+          { id:4, title:"नेपाली मिश्रित – सेट ४", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'हस्त' शब्दको अर्थ ___ हो ।", answer:"हात", type:"शब्दार्थ" },
+              { label:"ख", questionText:"'चिसो' को विपरीतार्थी शब्द ___ हो ।", answer:"तातो", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'ऊ गाउँदैछ' – यो ___ वर्तमान काल हो ।", answer:"अपूर्ण", type:"काल" },
+              { label:"घ", questionText:"'कुकुर' को पुलिङ्ग ___ हो ।", answer:"कुकुर", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'कान' को श्रुतिसमभिन्नार्थी शब्द ___ हो ।", answer:"काण", type:"श्रुतिसमभिन्नार्थी" },
+            ],
+            wordBank:["हात","तातो","अपूर्ण","कुकुर","काण","सामान्य","हस्त"],
+          },
+          // ══ NEPALI SET 5 ══
+          { id:5, title:"नेपाली मिश्रित – सेट ५", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'पर्वत' को पर्यायवाची शब्द ___ हो ।", answer:"हिमाल", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'विकास' को विपरीतार्थी शब्द ___ हो ।", answer:"पतन", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'माछा' को तत्सम रूप ___ हो ।", answer:"मत्स्य", type:"तत्सम" },
+              { label:"घ", questionText:"'भाइ' को स्त्रीलिङ्ग ___ हो ।", answer:"बहिनी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'सुन्दर' शब्दको अर्थ ___ हो ।", answer:"राम्रो", type:"शब्दार्थ" },
+            ],
+            wordBank:["हिमाल","पतन","मत्स्य","बहिनी","राम्रो","उत्थान","भाई"],
+          },
+          // ══ NEPALI SET 6 ══
+          { id:6, title:"नेपाली मिश्रित – सेट ६", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'हाँसो' को विपरीतार्थी शब्द ___ हो ।", answer:"रुवाई", type:"विपरीतार्थी" },
+              { label:"ख", questionText:"'दूध' को तत्सम शब्द ___ हो ।", answer:"दुग्ध", type:"तत्सम" },
+              { label:"ग", questionText:"'उनी सुतेकी थिइन्' – यो ___ भूत हो ।", answer:"अपूर्ण", type:"काल" },
+              { label:"घ", questionText:"'शेर' को स्त्रीलिङ्ग ___ हो ।", answer:"शेर्नी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'सुखी' को पर्यायवाची शब्द ___ हो ।", answer:"खुसी", type:"पर्यायवाची" },
+            ],
+            wordBank:["रुवाई","दुग्ध","अपूर्ण","शेर्नी","खुसी","सामान्य","हाँसो"],
+          },
+          // ══ NEPALI SET 7 ══
+          { id:7, title:"नेपाली मिश्रित – सेट ७", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'अग्नि' को पर्यायवाची शब्द ___ हो ।", answer:"आगो", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'उज्यालो' को विपरीतार्थी शब्द ___ हो ।", answer:"अँध्यारो", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'हात' को तत्सम रूप ___ हो ।", answer:"हस्त", type:"तत्सम" },
+              { label:"घ", questionText:"'देव' को स्त्रीलिङ्ग ___ हो ।", answer:"देवी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'मृत्यु' शब्दको अर्थ ___ हो ।", answer:"मरण", type:"शब्दार्थ" },
+            ],
+            wordBank:["आगो","अँध्यारो","हस्त","देवी","मरण","उज्यालो","जन्म"],
+          },
+          // ══ NEPALI SET 8 ══
+          { id:8, title:"नेपाली मिश्रित – सेट ८", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'वायु' को पर्यायवाची शब्द ___ हो ।", answer:"हावा", type:"पर्यायवाची" },
+              { label:"ख", questionText:"'प्रेम' को विपरीतार्थी शब्द ___ हो ।", answer:"घृणा", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'ऊ खाँदैथ्यो' – यो ___ भूत काल हो ।", answer:"अपूर्ण", type:"काल" },
+              { label:"घ", questionText:"'पुरुष' को स्त्रीलिङ्ग ___ हो ।", answer:"महिला", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'सार' को श्रुतिसमभिन्नार्थी शब्द ___ हो ।", answer:"शार", type:"श्रुतिसमभिन्नार्थी" },
+            ],
+            wordBank:["हावा","घृणा","अपूर्ण","महिला","शार","पूर्ण","प्रेम"],
+          },
+          // ══ NEPALI SET 9 ══
+          { id:9, title:"नेपाली मिश्रित – सेट ९", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'गगन' शब्दको अर्थ ___ हो ।", answer:"आकाश", type:"शब्दार्थ" },
+              { label:"ख", questionText:"'मिठो' को विपरीतार्थी शब्द ___ हो ।", answer:"तितो", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'उनले लेखे' – यो ___ भूत काल हो ।", answer:"सामान्य", type:"काल" },
+              { label:"घ", questionText:"'छोरो' को स्त्रीलिङ्ग ___ हो ।", answer:"छोरी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'माछा' को तत्सम शब्द ___ हो ।", answer:"मत्स्य", type:"तत्सम" },
+            ],
+            wordBank:["आकाश","तितो","सामान्य","छोरी","मत्स्य","अपूर्ण","गगन"],
+          },
+          // ══ NEPALI SET 10 ══
+          { id:10, title:"नेपाली मिश्रित – सेट १०", lang:"ne",
+            questions:[
+              { label:"क", questionText:"'पद्म' शब्दको अर्थ ___ हो ।", answer:"कमल", type:"शब्दार्थ" },
+              { label:"ख", questionText:"'साथी' को विपरीतार्थी शब्द ___ हो ।", answer:"शत्रु", type:"विपरीतार्थी" },
+              { label:"ग", questionText:"'ऊ दौडिरहन्छ' – यो ___ वर्तमान काल हो ।", answer:"अपूर्ण", type:"काल" },
+              { label:"घ", questionText:"'बाघ' को स्त्रीलिङ्ग ___ हो ।", answer:"बाघिनी", type:"लिङ्ग" },
+              { label:"ङ", questionText:"'आगो' को पर्यायवाची शब्द ___ हो ।", answer:"अग्नि", type:"पर्यायवाची" },
+            ],
+            wordBank:["कमल","शत्रु","अपूर्ण","बाघिनी","अग्नि","सामान्य","साथी"],
+          },
+          // ══ ENGLISH SET 1 ══
+          { id:11, title:"English Mixed Grammar – Set 1", lang:"en",
+            questions:[
+              { label:"a", questionText:"She is ___ honest person.", answer:"an", type:"article" },
+              { label:"b", questionText:"'Happy' and 'Joyful' are ___.", answer:"synonyms", type:"synonym-concept" },
+              { label:"c", questionText:"He ___ (go) to school every day. [Simple Present]", answer:"goes", type:"tense" },
+              { label:"d", questionText:"The opposite of 'brave' is ___.", answer:"cowardly", type:"antonym" },
+              { label:"e", questionText:"___ Eiffel Tower is in Paris.", answer:"The", type:"article" },
+            ],
+            wordBank:["an","synonyms","goes","cowardly","The","a","antonyms"],
+          },
+          // ══ ENGLISH SET 2 ══
+          { id:12, title:"English Mixed Grammar – Set 2", lang:"en",
+            questions:[
+              { label:"a", questionText:"I saw ___ elephant at the zoo.", answer:"an", type:"article" },
+              { label:"b", questionText:"She ___ (write) a letter now. [Present Continuous]", answer:"is writing", type:"tense" },
+              { label:"c", questionText:"The synonym of 'big' is ___.", answer:"large", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'ancient' is ___.", answer:"modern", type:"antonym" },
+              { label:"e", questionText:"He is ___ university student.", answer:"a", type:"article" },
+            ],
+            wordBank:["an","is writing","large","modern","a","small","was writing"],
+          },
+          // ══ ENGLISH SET 3 ══
+          { id:13, title:"English Mixed Grammar – Set 3", lang:"en",
+            questions:[
+              { label:"a", questionText:"___ sun rises in the east.", answer:"The", type:"article" },
+              { label:"b", questionText:"They ___ (play) football when it rained. [Past Continuous]", answer:"were playing", type:"tense" },
+              { label:"c", questionText:"The synonym of 'begin' is ___.", answer:"start", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'victory' is ___.", answer:"defeat", type:"antonym" },
+              { label:"e", questionText:"He is ___ hour late.", answer:"an", type:"article" },
+            ],
+            wordBank:["The","were playing","start","defeat","an","a","played"],
+          },
+          // ══ ENGLISH SET 4 ══
+          { id:14, title:"English Mixed Grammar – Set 4", lang:"en",
+            questions:[
+              { label:"a", questionText:"Nepal is ___ beautiful country.", answer:"a", type:"article" },
+              { label:"b", questionText:"She ___ (finish) her homework already. [Present Perfect]", answer:"has finished", type:"tense" },
+              { label:"c", questionText:"The synonym of 'rapid' is ___.", answer:"fast", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'generous' is ___.", answer:"stingy", type:"antonym" },
+              { label:"e", questionText:"Please close ___ door.", answer:"the", type:"article" },
+            ],
+            wordBank:["a","has finished","fast","stingy","the","an","have finished"],
+          },
+          // ══ ENGLISH SET 5 ══
+          { id:15, title:"English Mixed Grammar – Set 5", lang:"en",
+            questions:[
+              { label:"a", questionText:"I have ___ umbrella.", answer:"an", type:"article" },
+              { label:"b", questionText:"He ___ (eat) lunch right now. [Present Continuous]", answer:"is eating", type:"tense" },
+              { label:"c", questionText:"The synonym of 'angry' is ___.", answer:"furious", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'noisy' is ___.", answer:"quiet", type:"antonym" },
+              { label:"e", questionText:"She adopted ___ one-year-old puppy.", answer:"a", type:"article" },
+            ],
+            wordBank:["an","is eating","furious","quiet","a","the","was eating"],
+          },
+          // ══ ENGLISH SET 6 ══
+          { id:16, title:"English Mixed Grammar – Set 6", lang:"en",
+            questions:[
+              { label:"a", questionText:"___ Pacific Ocean is the largest.", answer:"The", type:"article" },
+              { label:"b", questionText:"They ___ (study) all night yesterday. [Simple Past]", answer:"studied", type:"tense" },
+              { label:"c", questionText:"The synonym of 'courage' is ___.", answer:"bravery", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'expand' is ___.", answer:"shrink", type:"antonym" },
+              { label:"e", questionText:"She is ___ European.", answer:"a", type:"article" },
+            ],
+            wordBank:["The","studied","bravery","shrink","a","an","study"],
+          },
+          // ══ ENGLISH SET 7 ══
+          { id:17, title:"English Mixed Grammar – Set 7", lang:"en",
+            questions:[
+              { label:"a", questionText:"Can I borrow ___ pen from you?", answer:"a", type:"article" },
+              { label:"b", questionText:"I ___ (read) this book before. [Present Perfect]", answer:"have read", type:"tense" },
+              { label:"c", questionText:"The synonym of 'tired' is ___.", answer:"exhausted", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'transparent' is ___.", answer:"opaque", type:"antonym" },
+              { label:"e", questionText:"She plays ___ piano.", answer:"the", type:"article" },
+            ],
+            wordBank:["a","have read","exhausted","opaque","the","an","had read"],
+          },
+          // ══ ENGLISH SET 8 ══
+          { id:18, title:"English Mixed Grammar – Set 8", lang:"en",
+            questions:[
+              { label:"a", questionText:"He wants to be ___ engineer.", answer:"an", type:"article" },
+              { label:"b", questionText:"She ___ (sleep) when I called. [Past Continuous]", answer:"was sleeping", type:"tense" },
+              { label:"c", questionText:"The synonym of 'smart' is ___.", answer:"intelligent", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'expensive' is ___.", answer:"cheap", type:"antonym" },
+              { label:"e", questionText:"___ Himalayas are in Nepal.", answer:"The", type:"article" },
+            ],
+            wordBank:["an","was sleeping","intelligent","cheap","The","a","slept"],
+          },
+          // ══ ENGLISH SET 9 ══
+          { id:19, title:"English Mixed Grammar – Set 9", lang:"en",
+            questions:[
+              { label:"a", questionText:"I read ___ interesting book yesterday.", answer:"an", type:"article" },
+              { label:"b", questionText:"They ___ (arrive) by 8 AM tomorrow. [Future]", answer:"will arrive", type:"tense" },
+              { label:"c", questionText:"The synonym of 'strange' is ___.", answer:"odd", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'shallow' is ___.", answer:"deep", type:"antonym" },
+              { label:"e", questionText:"___ moon shines at night.", answer:"The", type:"article" },
+            ],
+            wordBank:["an","will arrive","odd","deep","The","a","arrived"],
+          },
+          // ══ ENGLISH SET 10 ══
+          { id:20, title:"English Mixed Grammar – Set 10", lang:"en",
+            questions:[
+              { label:"a", questionText:"She bought ___ new car.", answer:"a", type:"article" },
+              { label:"b", questionText:"He ___ (work) here for 5 years. [Present Perfect]", answer:"has worked", type:"tense" },
+              { label:"c", questionText:"The synonym of 'difficult' is ___.", answer:"hard", type:"synonym" },
+              { label:"d", questionText:"The opposite of 'success' is ___.", answer:"failure", type:"antonym" },
+              { label:"e", questionText:"I ate ___ apple this morning.", answer:"an", type:"article" },
+            ],
+            wordBank:["a","has worked","hard","failure","an","the","have worked"],
+          },
+        ]};
+
+        const TIMER_SECONDS = 120;
+
+        function NepaliQuiz() {
+          const [sets, setSets] = useState(null);
+          const [loading, setLoading] = useState(true);
+          const [error, setError] = useState(null);
+          const [currentSetIndex, setCurrentSetIndex] = useState(0);
+          const [answers, setAnswers] = useState({});
+          const [checked, setChecked] = useState(false);
+          const [score, setScore] = useState(0);
+          const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+          const [importOpen, setImportOpen] = useState(false);
+          const [importText, setImportText] = useState("");
+          const [importError, setImportError] = useState("");
+          const [draggingWord, setDraggingWord] = useState(null);
+          const [dragOverSlot, setDragOverSlot] = useState(null);
+          const [history, setHistory] = useState([]);
+          const [reviewIndex, setReviewIndex] = useState(null);
+          const timerRef = useRef(null);
+
+          const currentSet = sets?.sets?.[currentSetIndex];
+          const wordBank = currentSet?.wordBank || [];
+          const reviewEntry = reviewIndex !== null ? history[reviewIndex] : null;
+          const displaySet = reviewEntry ? sets.sets[reviewEntry.setIndex] : currentSet;
+          const displayAnswers = reviewEntry ? reviewEntry.answers : answers;
+          const isReviewing = reviewIndex !== null;
+
+          const resetForSet = useCallback(() => {
+            setAnswers({});
+            setChecked(false);
+            setTimeLeft(TIMER_SECONDS);
+            setDraggingWord(null);
+            setDragOverSlot(null);
+            setReviewIndex(null);
+          }, []);
+
+          const handleCheck = useCallback(() => {
+            if (!currentSet || checked) return;
+            let gained = 0;
+            currentSet.questions.forEach((q, i) => {
+              if ((answers[i] || "").trim().toLowerCase() === q.answer.trim().toLowerCase()) gained += 10;
+            });
+            setScore((s) => s + gained);
+            setChecked(true);
+            setHistory((h) => [...h, { setIndex: currentSetIndex, answers: { ...answers }, gained }]);
+          }, [currentSet, answers, checked, currentSetIndex]);
+
+          useEffect(() => {
+            if (isReviewing) return;
+            if (timeLeft <= 0) { handleCheck(); return; }
+            timerRef.current = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+            return () => clearTimeout(timerRef.current);
+          }, [timeLeft, handleCheck, isReviewing]);
+
+          useEffect(() => {
+            // Static Load instead of fetch for local stability
+            setSets(FALLBACK_SETS);
+            setLoading(false);
+          }, []);
+
+          const handleNextSet = () => {
+            if (!sets) return;
+            setCurrentSetIndex((i) => (i + 1) % sets.sets.length);
+            resetForSet();
+          };
+
+          const handleImport = () => {
+            try {
+              const parsed = JSON.parse(importText);
+              if (!parsed.sets || !Array.isArray(parsed.sets)) throw new Error();
+              setSets(parsed);
+              setCurrentSetIndex(0);
+              resetForSet();
+              setHistory([]);
+              setImportOpen(false);
+              setImportText("");
+              setImportError("");
+            } catch {
+              setImportError("अमान्य JSON ढाँचा।");
+            }
+          };
+
+          const formatTime = (secs) => {
+            const m = String(Math.floor(secs/60)).padStart(2,"0");
+            const s = String(secs%60).padStart(2,"0");
+            return `${m}:${s}`;
+          };
+
+          const usedWordMap = {};
+          if (!isReviewing) {
+            Object.keys(answers).forEach((k) => { if (answers[k]) usedWordMap[answers[k]] = parseInt(k); });
+          }
+
+          const handleDragStartWord = (word, fromSlot) => { setDraggingWord({word, fromSlot: fromSlot ?? null}); };
+          const handleDropOnSlot = (slotIndex) => {
+            if (!draggingWord || isReviewing) return;
+            const {word, fromSlot} = draggingWord;
+            setAnswers((prev) => {
+              const next = {...prev};
+              if (fromSlot !== null && fromSlot !== undefined) delete next[fromSlot];
+              next[slotIndex] = word;
+              return next;
+            });
+            setDraggingWord(null); setDragOverSlot(null);
+          };
+          const handleDropOnBank = () => {
+            if (!draggingWord || isReviewing) { setDraggingWord(null); return; }
+            const {fromSlot} = draggingWord;
+            if (fromSlot !== null && fromSlot !== undefined) {
+              setAnswers((prev) => { const n={...prev}; delete n[fromSlot]; return n; });
+            }
+            setDraggingWord(null); setDragOverSlot(null);
+          };
+          const handleClearSlot = (slotIndex) => {
+            if (isReviewing) return;
+            setAnswers((prev) => { const n={...prev}; delete n[slotIndex]; return n; });
+          };
+          const handleTypeInSlot = (slotIndex, val) => {
+            if (!val || isReviewing) return;
+            setAnswers((prev) => ({...prev, [slotIndex]: val}));
+          };
+
+          const getSlotColors = (i, forAnswers, forSet) => {
+            const isCheckedState = isReviewing || checked;
+            if (!isCheckedState) return {bg:"#f0fdf0", border:"#86efac", textColor:"#15803d"};
+            const q = forSet.questions[i];
+            const correct = (forAnswers[i]||"").trim().toLowerCase() === q.answer.trim().toLowerCase();
+            return correct
+              ? {bg:"#bbf7d0", border:"#16a34a", textColor:"#15803d"}
+              : {bg:"#fee2e2", border:"#dc2626", textColor:"#dc2626"};
+          };
+
+          const goToPrev = () => {
+            if (history.length === 0) return;
+            setReviewIndex(history.length - 1);
+          };
+          const exitReview = () => { setReviewIndex(null); };
+          const reviewPrev = () => { if (reviewIndex > 0) setReviewIndex(reviewIndex - 1); };
+          const reviewNext = () => { if (reviewIndex < history.length - 1) setReviewIndex(reviewIndex + 1); };
+
+          if (loading) return (
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#f8fafc",fontFamily:"'Noto Sans Devanagari','Arial Unicode MS',sans-serif"}}>
+              <div style={{fontSize:48,marginBottom:20,animation:"spin 1s linear infinite"}}>⏳</div>
+              <div style={{fontSize:20,color:"#6366f1",fontWeight:"bold"}}>प्रश्नहरू तयार गर्दै...</div>
+              <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+            </div>
+          );
+
+          const shownSet = displaySet;
+          const shownAnswers = displayAnswers;
+          const isCheckedMode = isReviewing || checked;
+
+          return (
+            <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#e0e7ff 0%,#f0fdf4 100%)",fontFamily:"'Noto Sans Devanagari','Arial Unicode MS',sans-serif",padding:"24px 12px 12px"}}>
+              <div style={{maxWidth:700,margin:"0 auto"}}>
+                <div style={{textAlign:"center",marginBottom:16}}>
+                  <h1 style={{fontSize:26,fontWeight:900,color:"#3730a3",margin:0}}>📚 नेपाली भाषा र अङ्ग्रेजी भाषा प्रश्नोत्तरी</h1>
+                  <div style={{fontSize:13,color:"#6b7280",marginTop:3}}>
+                    {isReviewing
+                      ? <span style={{color:"#f59e0b",fontWeight:700}}>👁 समीक्षा मोड – सेट {sets.sets[reviewEntry.setIndex]?.id} | {sets.sets[reviewEntry.setIndex]?.title}</span>
+                      : <>{shownSet?.title} &nbsp;|&nbsp; सेट {currentSetIndex+1} / {sets?.sets?.length||1}</>
+                    }
+                  </div>
+                </div>
+
+                {error && <div style={{background:"#fef9c3",border:"1px solid #fde047",borderRadius:8,padding:"8px 14px",marginBottom:14,fontSize:13,color:"#854d0e"}}>⚠️ {error}</div>}
+
+                {isReviewing && (
+                  <div style={{background:"#fef3c7",border:"1px solid #fcd34d",borderRadius:10,padding:"10px 16px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                    <button onClick={reviewPrev} disabled={reviewIndex===0} style={{background:reviewIndex===0?"#e5e7eb":"#f59e0b",color:reviewIndex===0?"#9ca3af":"#fff",border:"none",borderRadius:6,padding:"4px 14px",fontWeight:700,cursor:reviewIndex===0?"default":"pointer",fontFamily:"inherit"}}>◀ अघिल्लो</button>
+                    <span style={{fontSize:13,color:"#92400e",fontWeight:600}}>
+                      इतिहास {reviewIndex+1} / {history.length} &nbsp;|&nbsp; प्राप्त अङ्क: <strong>{reviewEntry?.gained||0}</strong>
+                    </span>
+                    <button onClick={reviewNext} disabled={reviewIndex===history.length-1} style={{background:reviewIndex===history.length-1?"#e5e7eb":"#f59e0b",color:reviewIndex===history.length-1?"#9ca3af":"#fff",border:"none",borderRadius:6,padding:"4px 14px",fontWeight:700,cursor:reviewIndex===history.length-1?"default":"pointer",fontFamily:"inherit"}}>अर्को ▶</button>
+                  </div>
+                )}
+
+                <div style={{background:"#fff",borderRadius:16,padding:"22px 24px",marginBottom:14,boxShadow:"0 2px 16px rgba(99,102,241,0.10)"}}>
+                  {shownSet?.questions.map((q,i) => {
+                    const parts = q.questionText.split("___");
+                    const {bg,border,textColor} = getSlotColors(i,shownAnswers,shownSet);
+                    const placed = shownAnswers[i];
+                    const isWrong = isCheckedMode && placed && placed.trim().toLowerCase() !== q.answer.trim().toLowerCase();
+                    const isOver = dragOverSlot===i && !isReviewing;
+
+                    return (
+                      <div key={i} style={{marginBottom:i<shownSet.questions.length-1?20:0,fontSize:17,lineHeight:2.3,display:"flex",alignItems:"center",flexWrap:"wrap",gap:4}}>
+                        <span style={{fontWeight:700,color:"#1e293b",marginRight:4}}>{q.label})</span>
+                        <span style={{color:"#475569",fontSize:13,marginRight:4,background:"#f1f5f9",borderRadius:4,padding:"1px 6px"}}>{q.type}</span>
+                        <span>{parts[0]}</span>
+                        <span
+                          onDragOver={(e)=>{ e.preventDefault(); if(!isReviewing) setDragOverSlot(i); }}
+                          onDragLeave={()=>setDragOverSlot(null)}
+                          onDrop={()=>handleDropOnSlot(i)}
+                          style={{
+                            display:"inline-flex",alignItems:"center",justifyContent:"center",
+                            minWidth:110,height:36,verticalAlign:"middle",
+                            background:isOver?"#e0e7ff":(placed?bg:"#f0fdf0"),
+                            border:`2px ${placed?"solid":"dashed"} ${isOver?"#6366f1":border}`,
+                            borderRadius:8,margin:"0 4px",transition:"all 0.15s",
+                            position:"relative",boxShadow:isOver?"0 0 0 3px #c7d2fe":"none",
+                          }}
+                        >
+                          {placed ? (
+                            <>
+                              <span
+                                draggable={!isCheckedMode}
+                                onDragStart={()=>!isCheckedMode && handleDragStartWord(placed,i)}
+                                style={{fontWeight:700,color:textColor,fontSize:15,cursor:isCheckedMode?"default":"grab",userSelect:"none",padding:"0 22px 0 8px"}}
+                              >{placed}</span>
+                              {!isCheckedMode && (
+                                <span onClick={()=>handleClearSlot(i)}
+                                  style={{position:"absolute",right:5,top:"50%",transform:"translateY(-50%)",fontSize:11,color:"#9ca3af",cursor:"pointer"}}>✕</span>
+                              )}
+                            </>
+                          ) : (
+                            !isCheckedMode && (
+                              <input
+                                onKeyDown={(e)=>{ if(e.key==="Enter"&&e.target.value.trim()){ handleTypeInSlot(i,e.target.value.trim()); e.target.value=""; }}}
+                                placeholder="टाइप / तान्नुस्"
+                                disabled={isCheckedMode}
+                                style={{background:"transparent",border:"none",outline:"none",fontSize:13,width:90,textAlign:"center",fontFamily:"inherit",color:"#6b7280"}}
+                              />
+                            )
+                          )}
+                          {isCheckedMode && !placed && (
+                            <span style={{fontSize:12,color:"#9ca3af",padding:"0 8px"}}>—</span>
+                          )}
+                        </span>
+                        {parts[1] && <span>{parts[1]}</span>}
+                        {isWrong && <span style={{fontSize:13,color:"#16a34a",marginLeft:6,fontWeight:700,whiteSpace:"nowrap"}}>✓ {q.answer}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {!isReviewing && (
+                  <div
+                    onDragOver={(e)=>e.preventDefault()}
+                    onDrop={handleDropOnBank}
+                    style={{background:"#f8fafc",border:"1.5px dashed #c7d2fe",borderRadius:12,padding:"14px 18px",marginBottom:14}}
+                  >
+                    <div style={{fontSize:12,color:"#6366f1",fontWeight:700,marginBottom:10,letterSpacing:0.5,textTransform:"uppercase"}}>
+                      🗂 शब्द भण्डार — तानेर माथि राख्नुहोस्
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+                      {wordBank.map((word,wi) => {
+                        const isUsed = word in usedWordMap;
+                        return (
+                          <div key={wi}
+                            draggable={!isUsed&&!isCheckedMode}
+                            onDragStart={()=>!isUsed&&!isCheckedMode&&handleDragStartWord(word,null)}
+                            style={{
+                              background:isUsed?"#e5e7eb":"#6366f1",
+                              color:isUsed?"#9ca3af":"#fff",
+                              padding:"7px 20px",borderRadius:24,fontSize:15,fontWeight:600,
+                              cursor:isUsed||isCheckedMode?"not-allowed":"grab",
+                              userSelect:"none",opacity:isUsed?0.45:1,
+                              transition:"all 0.2s",
+                              boxShadow:isUsed?"none":"0 2px 8px rgba(99,102,241,0.35)",
+                              textDecoration:isUsed?"line-through":"none",
+                            }}
+                          >{word}</div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{background:"#f1f5f9",borderRadius:12,padding:"12px 20px",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 1px 6px rgba(0,0,0,0.07)",gap:8}}>
+                  <div style={{fontWeight:700,fontSize:22,color:(!isReviewing&&timeLeft<30)?"#dc2626":"#1e293b",whiteSpace:"nowrap"}}>
+                    {isReviewing ? "👁 समीक्षा" : `⏳ ${formatTime(timeLeft)}`}
+                  </div>
+                  <div style={{fontSize:12,color:"#9ca3af",fontStyle:"italic",textAlign:"center",flex:1,lineHeight:1.6}}>
+                    {isReviewing ? "हेर्न मात्रै मिल्छ – submit हुँदैन" : <>शब्द तानेर राख्नुहोस्<br/>वा Enter थिचेर टाइप गर्नुहोस्</>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,whiteSpace:"nowrap"}}>
+                    <span style={{fontSize:12,color:"#64748b"}}>प्राप्त अङ्कः</span>
+                    <span style={{background:"#6366f1",color:"#fff",borderRadius:20,padding:"4px 16px",fontWeight:700,fontSize:18,minWidth:48,textAlign:"center"}}>{score}</span>
+                  </div>
+                </div>
+
+                {isReviewing ? (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                    <button onClick={exitReview} style={{background:"#6366f1",color:"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>⬅ हालको सेटमा फर्कनुहोस्</button>
+                    <button onClick={handleNextSet} style={{background:"#16a34a",color:"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>⏭ अर्को सेट</button>
+                  </div>
+                ) : (
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10,marginBottom:14}}>
+                    <button onClick={handleCheck} disabled={checked} style={{background:checked?"#86efac":"#16a34a",color:"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:14,cursor:checked?"default":"pointer",fontFamily:"inherit"}}>✅ जाँच गर्नुहोस्</button>
+                    <button onClick={goToPrev} disabled={history.length===0} style={{background:history.length===0?"#e5e7eb":"#f59e0b",color:history.length===0?"#9ca3af":"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:14,cursor:history.length===0?"default":"pointer",fontFamily:"inherit"}}>🔙 पहिलेकोमा फर्कनुहोस्</button>
+                    <button onClick={handleNextSet} style={{background:"#6366f1",color:"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>⏭ अर्को सेट</button>
+                    <button onClick={()=>setImportOpen(true)} style={{background:"#374151",color:"#fff",border:"none",borderRadius:8,height:52,fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>📋 इम्पोर्ट</button>
+                  </div>
+                )}
+                <div style={{textAlign:"center",fontSize:12,color:"#9ca3af",marginTop:8}}>© विकाश भुसाल (BIKASH BHUSAL)</div>
+              </div>
+
+              {importOpen && (
+                <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
+                  <div style={{background:"#fff",borderRadius:16,padding:28,width:"100%",maxWidth:480,boxShadow:"0 8px 40px rgba(0,0,0,0.2)"}}>
+                    <h2 style={{margin:"0 0 14px",fontSize:18,color:"#1e293b",fontFamily:"inherit"}}>📋 प्रश्न इम्पोर्ट गर्नुहोस्</h2>
+                    <textarea value={importText} onChange={(e)=>setImportText(e.target.value)} rows={8} style={{width:"100%",borderRadius:8,border:"1px solid #d1d5db",padding:10,fontSize:13,fontFamily:"monospace",resize:"vertical",boxSizing:"border-box"}} placeholder='{"sets":[...]}' />
+                    {importError && <div style={{color:"#dc2626",fontSize:13,marginTop:6}}>{importError}</div>}
+                    <div style={{display:"flex",gap:10,marginTop:14}}>
+                      <button onClick={handleImport} style={{flex:1,background:"#6366f1",color:"#fff",border:"none",borderRadius:8,height:44,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>इम्पोर्ट</button>
+                      <button onClick={()=>{setImportOpen(false);setImportError("");setImportText("");}} style={{flex:1,background:"#f1f5f9",color:"#374151",border:"none",borderRadius:8,height:44,fontWeight:700,fontSize:15,cursor:"pointer",fontFamily:"inherit"}}>रद्द</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NepaliQuiz />);
+    </script>
+</body>
+</html>
